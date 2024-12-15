@@ -1,4 +1,4 @@
-package firecracker_application.firecracker_instance.controller.util;
+package firecracker_application.firecracker_instance.util;
 
 import firecracker_application.firecracker_instance.controller.dto.ResourceRequest;
 import firecracker_application.firecracker_instance.controller.dto.ResourceResponse;
