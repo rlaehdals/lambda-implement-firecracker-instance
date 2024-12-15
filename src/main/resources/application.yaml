@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: firecracker-instance
+
+server:
+  port: 8081
