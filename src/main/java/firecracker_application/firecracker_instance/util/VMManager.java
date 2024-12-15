@@ -62,7 +62,7 @@ public class VMManager {
         Map<String, String> env = new HashMap<>(System.getenv());
         int sbId = generateRandomSbId();
 
-        env.put("VCPU", String.valueOf(Math.max(1, Math.ceil((double) resourceRequest.getRequestMemory() / 2048 * 2) / 2)));
+        env.put("VCPU", String.valueOf(Math.max(1, Math.ceil(resourceRequest.getRequestMemory() / 2048 * 2) / 2)));
         env.put("MEMORY", String.valueOf(resourceRequest.getRequestMemory()));
         env.put("CODE_LOCATION", resourceRequest.getCodeLocation());
         env.put("SB_ID", String.valueOf(sbId));
