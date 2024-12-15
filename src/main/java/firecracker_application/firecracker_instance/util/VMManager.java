@@ -12,7 +12,7 @@ import java.util.*;
 @Component
 public class VMManager {
 
-    private static final String BASH_SCRIPT_PATH = "/home/rkdlem48/firecracker/lambda-implement-firecracker-instance/start_instance.sh";
+    private static final String BASH_SCRIPT_PATH = "/home/rkdlem48/lambda-implement-firecracker-instance/start_instance.sh";
 
     public ResourceResponse instanceStart(final ResourceRequest resourceRequest) throws IOException, InterruptedException {
         List<String> outputLines = new ArrayList<>();
