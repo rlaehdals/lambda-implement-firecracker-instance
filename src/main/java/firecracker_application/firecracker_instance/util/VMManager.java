@@ -38,6 +38,10 @@ public class VMManager {
                 }
             }
 
+            for(String str: outputLines){
+                System.out.println(str);
+            }
+
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 throw new RuntimeException("Process exited with non-zero status: " + exitCode);
