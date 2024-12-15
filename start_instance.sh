@@ -24,7 +24,7 @@ curl_put() {
 start_microvm_with_network() {
     # Firecracker 실행
     sudo rm -f "$API_SOCKET"
-    sudo ./firecracker --api-sock "$API_SOCKET" &
+    sudo /home/rkdlem48/implements/firecracker --api-sock "$API_SOCKET" &
 
     while [ ! -e "$API_SOCKET" ]; do
         echo "FC $SB_ID still not ready..."
