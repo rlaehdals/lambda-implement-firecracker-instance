@@ -51,7 +51,7 @@ EOF
     # 머신 설정
     curl_put "/machine-config" <<EOF
 {
-    "vcpu_count": "$VPCU",
+    "vcpu_count": "$VCPU",
     "mem_size_mib": "$MEMORY"
 }
 EOF
