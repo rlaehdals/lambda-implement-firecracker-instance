@@ -12,7 +12,7 @@ import java.util.*;
 @Component
 public class VMManager {
 
-    private static final String BASH_SCRIPT_PATH = "./a.sh";
+    private static final String BASH_SCRIPT_PATH = "./start_instance.sh";
 
     public ResourceResponse instanceStart(final ResourceRequest resourceRequest) throws IOException, InterruptedException {
         List<String> outputLines = new ArrayList<>();
