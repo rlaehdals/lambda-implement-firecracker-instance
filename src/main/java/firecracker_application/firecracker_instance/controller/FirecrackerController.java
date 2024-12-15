@@ -17,7 +17,6 @@ public class FirecrackerController {
     private final VMManager vmManager;
     @PostMapping("/instance-start")
     public ResponseEntity<Object> request(@RequestBody ResourceRequest request) throws IOException, InterruptedException {
-        System.out.println(request);
         return ResponseEntity.ok(vmManager.instanceStart(request));
     }
 }

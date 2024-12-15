@@ -27,13 +27,14 @@ public class VMManager {
                 String line;
                 boolean withinOutput = false;
                 while ((line = reader.readLine()) != null) {
-                    if (line.contains("SCRIPT_OUTPUT_START")) {
-                        withinOutput = true;
-                    } else if (line.contains("SCRIPT_OUTPUT_END")) {
-                        withinOutput = false;
-                    } else if (withinOutput) {
-                        outputLines.add(line);
-                    }
+//                    if (line.contains("SCRIPT_OUTPUT_START")) {
+//                        withinOutput = true;
+//                    } else if (line.contains("SCRIPT_OUTPUT_END")) {
+//                        withinOutput = false;
+//                    } else if (withinOutput) {
+//                        outputLines.add(line);
+//                    }
+                    outputLines.add(line);
                 }
             }
 
