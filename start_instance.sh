@@ -51,8 +51,8 @@ EOF
     # 머신 설정
     curl_put "/machine-config" <<EOF
 {
-    "vcpu_count": "$VCPU",
-    "mem_size_mib": "$MEMORY"
+    "vcpu_count": $VCPU,
+    "mem_size_mib": $MEMORY
 }
 EOF
 
@@ -92,16 +92,27 @@ EOF
 
     echo "InstanceStart command executed"
 
-    sleep 10
+    sleep 4
 }
 
 execute_script_in_microvm() {
     echo "SCRIPT_OUTPUT_START"
     # SSH를 통해 S3에서 스크립트 다운로드 및 실행
-    ssh -o StrictHostKeyChecking=no -i ./ubuntu-24.04.id_rsa root@${FC_IP} << EOF
-        echo "$FC_IP"
+    ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH root@${FC_IP} << EOF
+        echo [INFO] "$FC_IP"
+
+        ip route add default via $TAP_IP dev eth0
+        echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+
+        aws s3 cp s3://$BUCKET_NAME/$FILE_PATH /root
+
+        java -Denv="$ENV" $FILE_PATH | while IFS= read -r line; do
+            echo "[INFO] \$line"
+        done
+
+        echo "SCRIPT_OUTPUT_END"
+        nohup reboot &
 EOF
-    echo "SCRIPT_OUTPUT_END"
 }
 
 CURL=(curl --silent --show-error --header "Content-Type: application/json" --unix-socket "${API_SOCKET}" --write-out "HTTP %{http_code}")

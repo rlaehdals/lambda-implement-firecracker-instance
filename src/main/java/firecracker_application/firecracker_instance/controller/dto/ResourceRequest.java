@@ -8,5 +8,7 @@ public class ResourceRequest {
     private Integer requestMemory;
     private String architect;
     private String language;
-    private String codeLocation;
+    private String bucketName;
+    private String filePath;
+    private String env;
 }
