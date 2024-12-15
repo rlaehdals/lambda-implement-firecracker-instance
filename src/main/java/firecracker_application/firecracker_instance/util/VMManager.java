@@ -69,12 +69,12 @@ public class VMManager {
         env.put("FC_IP", String.format("176.12.0.%d", ((4 * sbId + 1) % 256)));
         env.put("TAP_IP", String.format("176.12.0.%d", ((4 * sbId + 2) % 256)));
         env.put("FC_MAC", String.format("02:FC:00:00:%02X:%02X", sbId / 256, sbId % 256));
-        env.put("ROOTFS", "./ubuntu-24.04.ext4");
-        env.put("LOGFILE", "./output/fc-sb" + sbId + "-log");
+        env.put("ROOTFS", "/home/rkdlem48/implements/ubuntu-24.04.ext4");
+        env.put("LOGFILE", "/home/rkdlem48/implements/output/fc-sb" + sbId + "-log");
         env.put("API_SOCKET", "/tmp/firecracker-sb" + sbId + ".socket");
         env.put("KERNEL_BOOT_ARGS", String.format("console=ttyS0 reboot=k panic=1 pci=off ip=%s::%s:%s::eth0:off",
                 env.get("FC_IP"), env.get("TAP_IP"), env.get("MASK_LONG")));
-        env.put("KERNEL", "./vmlinux-5.10.225");
+        env.put("KERNEL", "/home/rkdlem48/implements/vmlinux-5.10.225");
 
         return env;
     }
