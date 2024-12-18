@@ -21,11 +21,23 @@ curl_put() {
     fi
 }
 
-start_microvm_with_network() {
-    # Firecracker 실행
-    sudo rm -f "$API_SOCKET"
-    sudo ./firecracker --api-sock "$API_SOCKET" &
+wait_for_cp() {
+    while :; do
+        # dd 프로세스의 수를 확인
+        cp_count=$(pgrep -x -c "cp" || echo 0)
 
+        # 프로세스 수가 2 이상이면 대기
+        if [ "$cp_count" -ge 1 ]; then
+            echo "dd 프로세스가 $cp_count 개 실행 중입니다. 잠시 기다립니다..."
+            sleep 0.5  # 0.5초 대기
+        else
+            echo "dd 프로세스가 종료되었습니다. 계속 진행합니다."
+            break
+        fi
+    done
+}
+
+start_microvm_with_network() {
     while [ ! -e "$API_SOCKET" ]; do
         echo "FC $SB_ID still not ready..."
         sleep 0.01
@@ -51,8 +63,8 @@ EOF
     # 머신 설정
     curl_put "/machine-config" <<EOF
 {
-    "vcpu_count": "$VPCU",
-    "mem_size_mib": "$MEMORY"
+    "vcpu_count": $VCPU,
+    "mem_size_mib": $MEMORY
 }
 EOF
 
@@ -64,11 +76,14 @@ EOF
 }
 EOF
 
+    wait_for_cp
+    cp $BASE_ROOTFS $COPY_ROOTFS
+
    # 루트 파일 시스템 설정
     curl_put "/drives/$SB_ID" <<EOF
 {
     "drive_id": "$SB_ID",
-    "path_on_host": "$ROOTFS",
+    "path_on_host": "$COPY_ROOTFS",
     "is_root_device": true,
     "is_read_only": false
 }
@@ -92,16 +107,26 @@ EOF
 
     echo "InstanceStart command executed"
 
-    sleep 10
+    sleep 3
 }
 
 execute_script_in_microvm() {
     echo "SCRIPT_OUTPUT_START"
     # SSH를 통해 S3에서 스크립트 다운로드 및 실행
-    ssh -o StrictHostKeyChecking=no -i ./ubuntu-24.04.id_rsa root@${FC_IP} << EOF
-        echo "$FC_IP"
+    ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH root@${FC_IP} << EOF
+        echo [INFO] "$FC_IP"
+
+        ip route add default via $TAP_IP dev eth0
+        echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+
+        aws s3 cp s3://$BUCKET_NAME/$FILE_PATH /root
+
+        java -Denv="$ENV" $FILE_PATH | while IFS= read -r line; do
+            echo "[INFO] \$line"
+        done
+
+        echo "SCRIPT_OUTPUT_END"
 EOF
-    echo "SCRIPT_OUTPUT_END"
 }
 
 CURL=(curl --silent --show-error --header "Content-Type: application/json" --unix-socket "${API_SOCKET}" --write-out "HTTP %{http_code}")

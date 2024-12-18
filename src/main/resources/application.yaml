@@ -4,3 +4,13 @@ spring:
 
 server:
   port: 8081
+
+firecracker:
+  file:
+    ssh-key: /home/rkdlem48/implements/ubuntu-24.04.id_rsa
+    rootfs: /home/rkdlem48/implements/ubuntu-24.04.ext4
+    kernel: /home/rkdlem48/implements/vmlinux-5.10.225
+    logfile: /home/rkdlem48/implements/output/fc-sb
+    start_script: /home/rkdlem48/lambda-implement-firecracker-instance/start_instance.sh
+    firecracker_finish_script: /home/rkdlem48/lambda-implement-firecracker-instance/firecracker_finish.sh
+  path: /home/rkdlem48/implements
