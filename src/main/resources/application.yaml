@@ -12,3 +12,5 @@ firecracker:
     kernel: /home/rkdlem48/implements/vmlinux-5.10.225
     logfile: /home/rkdlem48/implements/output/fc-sb
     start_script: /home/rkdlem48/lambda-implement-firecracker-instance/start_instance.sh
+    firecracker_finish_script: /home/rkdlem48/lambda-implement-firecracker-instance/firecracker_finish.sh
+  path: /home/rkdlem48/implements
