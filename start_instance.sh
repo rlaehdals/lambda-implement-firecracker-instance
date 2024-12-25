@@ -77,7 +77,7 @@ EOF
 EOF
 
     wait_for_cp
-    cp $BASE_ROOTFS $COPY_ROOTFS
+    cp --reflink=auto $BASE_ROOTFS $COPY_ROOTFS
 
    # 루트 파일 시스템 설정
     curl_put "/drives/$SB_ID" <<EOF
