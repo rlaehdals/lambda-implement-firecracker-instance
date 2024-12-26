@@ -1,7 +1,11 @@
 package firecracker_application.firecracker_instance.util;
 
-import firecracker_application.firecracker_instance.controller.dto.ResourceRequest;
-import firecracker_application.firecracker_instance.controller.dto.ResourceResponse;
+import firecracker_application.firecracker_instance.controller.dto.StartVMRequest;
+import firecracker_application.firecracker_instance.controller.dto.CommonResponse;
+import firecracker_application.firecracker_instance.controller.dto.StartVMResponse;
+import firecracker_application.firecracker_instance.controller.dto.ToWarmUpRequest;
+import firecracker_application.firecracker_instance.controller.dto.ToWarmUpResponse;
+
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -28,6 +32,9 @@ public class VMManager {
     @Value("${firecracker.file.start_script}")
     private String START_SCRIPT_PATH;
 
+    @Value("${firecracker.file.to_warm_up_script}")
+    private String TO_WARM_UP_SCRIPT;
+
     @Value("${firecracker.file.firecracker_finish_script}")
     private String FIRECARCKER_FINISH_SCRIPT_PATH;
 
@@ -35,15 +42,15 @@ public class VMManager {
     private String FIRECRACKER_PATH;
 
 
-    public ResourceResponse instanceStart(final ResourceRequest resourceRequest) {
+    public CommonResponse instanceStart(final StartVMRequest startVMRequest) {
         List<String> outputLines = new ArrayList<>();
-        Map<String, String> env = getEnv(resourceRequest);
+        Map<String, String> env = getMicroVmStartEnv(startVMRequest);
 
         try {
             firecrackerStart(env);
-            outputLines = executeStartScript(env);
+            outputLines = executeScript(env, START_SCRIPT_PATH);
         } catch (Exception e) {
-            return new ResourceResponse(Collections.singletonList("Error: " + e.getMessage()));
+            return new CommonResponse(Collections.singletonList("Error: " + e.getMessage()));
         } finally {
             try {
                 firecrackerFinish(env);
@@ -53,16 +60,29 @@ public class VMManager {
             }
         }
 
-        return new ResourceResponse(outputLines);
+        return new CommonResponse(new StartVMResponse(outputLines, env.get("FC_IP")));
     }
 
-    private List<String> executeStartScript(Map<String, String> env) throws IOException, InterruptedException {
+    public CommonResponse toWarmUpRequest(final ToWarmUpRequest toWarmUpRequest){
         List<String> outputLines = new ArrayList<>();
-        ProcessBuilder instanceStartProcessBuilder = new ProcessBuilder("bash", START_SCRIPT_PATH);
-        instanceStartProcessBuilder.environment().putAll(env);
-        instanceStartProcessBuilder.redirectErrorStream(true);
+        Map<String, String> env = getToWarmUpRequestEnv(toWarmUpRequest);
 
-        Process process = instanceStartProcessBuilder.start();
+        try {
+            outputLines = executeScript(env,TO_WARM_UP_SCRIPT);
+        } catch (Exception e) {
+            return new CommonResponse(Collections.singletonList("Error: " + e.getMessage()));
+        }
+
+        return new CommonResponse(new ToWarmUpResponse(outputLines));
+    }
+
+    private List<String> executeScript(final Map<String, String> env, final String scriptPath) throws IOException, InterruptedException {
+        List<String> outputLines = new ArrayList<>();
+        ProcessBuilder processBuilder = new ProcessBuilder("bash", scriptPath);
+        processBuilder.environment().putAll(env);
+        processBuilder.redirectErrorStream(true);
+
+        Process process = processBuilder.start();
 
         // Asynchronously read the output
         Thread outputThread = new Thread(() -> readOutput(process, outputLines));
@@ -102,25 +122,26 @@ public class VMManager {
         }
     }
 
-    private Map<String, String> getEnv(final ResourceRequest resourceRequest) {
+    private Map<String, String> getMicroVmStartEnv(final StartVMRequest startVMRequest) {
         Map<String, String> env = new HashMap<>(System.getenv());
         int sbId = generateRandomSbId();
 
         // Set environment variables
-        env.put("VCPU", String.valueOf(Math.max(1, Math.round(resourceRequest.getRequestMemory() / 2048 * 2) / 2)));
-        env.put("MEMORY", String.valueOf(resourceRequest.getRequestMemory()));
+        env.put("VCPU", String.valueOf(Math.max(1, Math.round(startVMRequest.getRequestMemory() / 2048 * 2) / 2)));
+        env.put("ARN", startVMRequest.getArn());
+        env.put("MEMORY", String.valueOf(startVMRequest.getRequestMemory()));
         env.put("SB_ID", String.valueOf(sbId));
         env.put("TAP_DEV", "tap" + sbId);
-        env.put("BUCKET_NAME", resourceRequest.getBucketName());
-        env.put("FILE_PATH", resourceRequest.getFilePath());
+        env.put("BUCKET_NAME", startVMRequest.getBucketName());
+        env.put("FILE_PATH", startVMRequest.getFilePath());
         env.put("MASK_LONG", "255.255.255.252");
         env.put("MASK_SHORT", "/30");
         setIPAddresses(env, sbId);
-        setKernelAndRootFSPaths(env, resourceRequest);
+        setKernelAndRootFSPaths(env, startVMRequest);
         env.put("LOGFILE", LOGFILE_PATH + sbId + "-log");
         env.put("API_SOCKET", "/tmp/firecracker-sb" + sbId + ".socket");
         env.put("SSH_KEY_PATH", SSH_KEY_PATH);
-        env.put("ENV", resourceRequest.getEnv());
+        env.put("ENV", startVMRequest.getEnv());
         env.put("FIRECRACKER_PATH", FIRECRACKER_PATH);
         
         System.out.println(env.get("BASE_ROOTFS"));
@@ -134,10 +155,10 @@ public class VMManager {
         env.put("FC_MAC", String.format("02:FC:00:00:%02X:%02X", sbId / 256, sbId % 256));
     }
 
-    private void setKernelAndRootFSPaths(Map<String, String> env, ResourceRequest resourceRequest) {
-        env.put("BASE_ROOTFS", ROOTFS_PATH.replace("ubuntu", resourceRequest.getLanguage() + "_ubuntu"));
-        env.put("COPY_ROOTFS", ROOTFS_PATH.replace("ubuntu", env.get("SB_ID") + "_" + resourceRequest.getLanguage() + "_ubuntu"));
-        env.put("KERNEL", KERNEL_PATH.replace("vmlinux", resourceRequest.getArchitect() + "_vmlinux"));
+    private void setKernelAndRootFSPaths(Map<String, String> env, StartVMRequest startVMRequest) {
+        env.put("BASE_ROOTFS", ROOTFS_PATH.replace("ubuntu", startVMRequest.getLanguage() + "_ubuntu"));
+        env.put("COPY_ROOTFS", ROOTFS_PATH.replace("ubuntu", env.get("SB_ID") + "_" + startVMRequest.getLanguage() + "_ubuntu"));
+        env.put("KERNEL", KERNEL_PATH.replace("vmlinux", startVMRequest.getArchitect() + "_vmlinux"));
         env.put("KERNEL_BOOT_ARGS", String.format("console=ttyS0 reboot=k panic=1 pci=off ip=%s::%s:%s::eth0:off",
                 env.get("FC_IP"), env.get("TAP_IP"), env.get("MASK_LONG")));
     }
@@ -189,6 +210,18 @@ public class VMManager {
         ProcessBuilder firecrackerFinishBuilder = new ProcessBuilder("bash", FIRECARCKER_FINISH_SCRIPT_PATH);
         firecrackerFinishBuilder.environment().putAll(env);
         firecrackerFinishBuilder.start();
+    }
+
+    private Map<String, String> getToWarmUpRequestEnv(ToWarmUpRequest toWarmUpRequest){
+        Map<String, String> env = new HashMap<>(System.getenv());
+
+        // Set environment variables
+        env.put("FC_IP", toWarmUpRequest.getFirecrackerInternalIP());
+        env.put("FILE_PATH", toWarmUpRequest.getFilePath());
+        env.put("SSH_KEY_PATH", SSH_KEY_PATH);
+        env.put("ENV", toWarmUpRequest.getEnv());
+
+        return env;
     }
     
 }

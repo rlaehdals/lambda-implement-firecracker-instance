@@ -13,4 +13,5 @@ firecracker:
     logfile: /home/rkdlem48/implements/output/fc-sb
     start_script: /home/rkdlem48/lambda-implement-firecracker-instance/start_instance.sh
     firecracker_finish_script: /home/rkdlem48/lambda-implement-firecracker-instance/firecracker_finish.sh
+    to_warm_up_script: /home/rkdlem48/lambda-implement-firecracker-instance/to_warm_up_start.sh
   path: /home/rkdlem48/implements
