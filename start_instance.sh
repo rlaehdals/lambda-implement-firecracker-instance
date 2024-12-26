@@ -23,15 +23,15 @@ curl_put() {
 
 wait_for_cp() {
     while :; do
-        # dd 프로세스의 수를 확인
+        # cp 프로세스의 수를 확인
         cp_count=$(pgrep -x -c "cp" || echo 0)
 
         # 프로세스 수가 2 이상이면 대기
         if [ "$cp_count" -ge 1 ]; then
-            echo "dd 프로세스가 $cp_count 개 실행 중입니다. 잠시 기다립니다..."
+            echo "cp 프로세스가 $cp_count 개 실행 중입니다. 잠시 기다립니다..."
             sleep 0.5  # 0.5초 대기
         else
-            echo "dd 프로세스가 종료되었습니다. 계속 진행합니다."
+            echo "cp 프로세스가 종료되었습니다. 계속 진행합니다."
             break
         fi
     done
